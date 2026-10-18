@@ -21,12 +21,14 @@ from app.agent.tools.calculator_tool import CalculatorTool
 from app.agent.critic import CriticFactChecker
 from app.agent.escalation import EscalationManager
 from app.guardrails.injection_defense import InjectionDefender
+from app.agent.llm_client import LLMClient
 
 logger = logging.getLogger(__name__)
 
 class AgentWorkflow:
     def __init__(self):
         self.vector_store = get_vector_store()
+        self.llm = LLMClient()
 
     def process_query(self, client_id: str, question: str) -> Dict[str, Any]:
         """
