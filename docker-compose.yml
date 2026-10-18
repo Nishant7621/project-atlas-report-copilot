@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: atlas_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_secure_pass
+      MYSQL_DATABASE: atlas_db
+      MYSQL_USER: atlas_user
+      MYSQL_PASSWORD: atlas_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init_mysql.sql:/docker-entrypoint-initdb.d/init_mysql.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_secure_pass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: atlas_backend
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: mysql+pymysql://atlas_user:atlas_pass@mysql:3306/atlas_db
+      READONLY_DATABASE_URL: mysql+pymysql://atlas_ro:atlas_ro_pass@mysql:3306/atlas_db
+      ATLAS_API_KEY: atlas_secret_key_12345
+      REQUEST_TIMEOUT_SECONDS: 30
+      CONFIDENCE_THRESHOLD: 0.75
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+
+  ci3-portal:
+    build:
+      context: ./php-portal
+      dockerfile: Dockerfile
+    container_name: atlas_ci3_portal
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      ATLAS_API_URL: http://backend:8000
+      ATLAS_API_KEY: atlas_secret_key_12345
+    ports:
+      - "8080:80"
+
+volumes:
+  mysql_data:
