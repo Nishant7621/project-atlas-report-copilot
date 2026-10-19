@@ -420,18 +420,37 @@
             sendBtn.innerText = "Analyzing...";
 
             try {
-                const res = await fetch("<?php echo site_url('chat/send'); ?>", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: new URLSearchParams({
-                        client_id: currentClientId,
-                        message: question
-                    })
-                });
+                const endpoint = "<?php echo site_url('chat/send'); ?>";
+                let fetchOptions = {};
+                
+                if (endpoint.includes("chat/send")) {
+                    fetchOptions = {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: new URLSearchParams({
+                            client_id: currentClientId,
+                            message: question
+                        })
+                    };
+                } else {
+                    fetchOptions = {
+                        method: "POST",
+                        headers: { 
+                            "Content-Type": "application/json",
+                            "X-API-Key": "atlas_secret_key_12345"
+                        },
+                        body: JSON.stringify({
+                            client_id: currentClientId,
+                            message: question
+                        })
+                    };
+                }
+
+                const res = await fetch(endpoint, fetchOptions);
                 const data = await res.json();
                 appendMessage("bot", data.answer_escaped || data.answer, data);
             } catch (err) {
-                appendMessage("bot", "Network Timeout / Error connecting to CodeIgniter 3 controller. Falling back gracefully.");
+                appendMessage("bot", "Network Timeout / Error connecting to Copilot service. Falling back gracefully.");
             } finally {
                 sendBtn.disabled = false;
                 sendBtn.innerText = "Ask Copilot";

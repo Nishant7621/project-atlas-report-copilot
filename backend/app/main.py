@@ -95,11 +95,31 @@ class IngestResponse(BaseModel):
     total_reports_processed: int
     total_chunks_indexed: int
 
-# --- API Endpoints ---
-
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, HTMLResponse
 import json
+from pathlib import Path
 from app.rag.semantic_cache import get_semantic_cache
+
+@app.get("/", response_class=HTMLResponse, tags=["Web Portal"])
+def serve_portal_ui(client_id: str = "C-01"):
+    """Serves the interactive Project Atlas portal directly on the root URL"""
+    view_path = Path(__file__).resolve().parent.parent.parent / "php-portal" / "application" / "views" / "chat_view.php"
+    if not view_path.exists():
+        view_path = Path(__file__).resolve().parent / "chat_view.php"
+    
+    with open(view_path, "r", encoding="utf-8") as f:
+        html = f.read()
+
+    # Render template values for direct web viewing
+    html = html.replace("<?php echo ($current_client === 'C-01' ? 'selected' : ''); ?>", "selected" if client_id == "C-01" else "")
+    html = html.replace("<?php echo ($current_client === 'C-02' ? 'selected' : ''); ?>", "selected" if client_id == "C-02" else "")
+    html = html.replace("<?php echo ($current_client === 'C-01' ? 'Northwind Utilities (C-01)' : 'Blue Delta Infra (C-02)'); ?>", 
+                        "Northwind Utilities (C-01)" if client_id == "C-01" else "Blue Delta Infra (C-02)")
+    html = html.replace("<?php echo $current_client; ?>", client_id)
+    html = html.replace("<?php echo site_url('chat/send'); ?>", "/chat")
+    html = html.replace("<?php echo $this->security->get_csrf_token_name(); ?>", "csrf_test")
+    html = html.replace("<?php echo $this->security->get_csrf_hash(); ?>", "dummy_token_123")
+    return HTMLResponse(content=html)
 
 @app.get("/health", tags=["Monitoring"])
 def health_check():
