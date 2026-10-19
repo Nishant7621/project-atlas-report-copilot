@@ -2,6 +2,12 @@
 ### AI Software Developer (Generative & Agentic AI) Take-Home Assignment
 **Cognitive Market Research and Consulting | Viman Nagar, Pune**
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render%20Cloud-success?style=for-the-badge&logo=render)](https://project-atlas-report-copilot.onrender.com/)
+[![CI/CD Pass](https://img.shields.io/badge/Test%20Suite-25%2F25%20(100%25)-brightgreen?style=for-the-badge&logo=pytest)](https://github.com/Nishant7621/project-atlas-report-copilot)
+
+> 🌐 **Live Cloud Deployment**: [https://project-atlas-report-copilot.onrender.com/](https://project-atlas-report-copilot.onrender.com/)  
+> 📑 **Interactive Swagger API Docs**: [https://project-atlas-report-copilot.onrender.com/docs](https://project-atlas-report-copilot.onrender.com/docs)
+
 ---
 
 ## 1. System Overview & Scenario
