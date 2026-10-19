@@ -97,15 +97,26 @@ class IngestResponse(BaseModel):
 
 # --- API Endpoints ---
 
+from fastapi.responses import StreamingResponse
+import json
+from app.rag.semantic_cache import get_semantic_cache
+
 @app.get("/health", tags=["Monitoring"])
 def health_check():
     vector_store = get_vector_store()
+    cache = get_semantic_cache()
     return {
         "status": "healthy",
         "environment": settings.ENVIRONMENT,
         "database_url": settings.DATABASE_URL.split("@")[-1],
         "indexed_chunks": len(vector_store.chunks),
-        "total_documents": vector_store.total_docs
+        "total_documents": vector_store.total_docs,
+        "bonus_features": {
+            "hybrid_search_reranker": True,
+            "entitlement_semantic_cache": cache.get_stats(),
+            "tiered_embeddings": ["Tier 1: Cloud API (Gemini/OpenAI)", "Tier 2: Hugging Face Inference API", "Tier 3: Local Dense Hash Fallback"],
+            "streaming_responses": True
+        }
     }
 
 @app.post("/chat", response_model=ChatResponse, tags=["Agent"])
@@ -124,6 +135,37 @@ def chat_endpoint(payload: ChatRequest, authorized: bool = Depends(verify_api_ke
     except Exception as e:
         logger.error(f"Error handling query: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Internal agent error: {str(e)}")
+
+@app.post("/chat/stream", tags=["Agent"])
+def chat_stream_endpoint(payload: ChatRequest, authorized: bool = Depends(verify_api_key)):
+    workflow = AgentWorkflow()
+    response_dict = workflow.process_query(
+        client_id=payload.client_id,
+        question=payload.message
+    )
+
+    def event_generator():
+        # Stream text words in real time
+        words = response_dict["answer"].split(" ")
+        for i, word in enumerate(words):
+            chunk_token = word + (" " if i < len(words) - 1 else "")
+            data_token = json.dumps({"type": "token", "content": chunk_token})
+            yield f"data: {data_token}\n\n"
+            time.sleep(0.01)
+
+        # Final structured metadata event
+        meta = {
+            "type": "done",
+            "citations": response_dict.get("citations", []),
+            "confidence": response_dict.get("confidence", 0.0),
+            "conflicts": response_dict.get("conflicts", []),
+            "derived_values": response_dict.get("derived_values", []),
+            "escalated": response_dict.get("escalated", False),
+            "cached": response_dict.get("cached", False)
+        }
+        yield f"data: {json.dumps(meta)}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.post("/ingest", response_model=IngestResponse, tags=["RAG"])
 def ingest_documents(authorized: bool = Depends(verify_api_key)):

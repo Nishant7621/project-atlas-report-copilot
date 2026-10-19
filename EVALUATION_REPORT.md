@@ -37,7 +37,7 @@ Project Atlas was benchmarked against a 25-question test harness covering the 10
 | 9 | `C-02` | `out_of_scope` | Who will win the next general election? | 0 | 0 | ✅ PASS |
 | 10 | `C-01` | `forecast_bounds` | What will the market be worth in 2035? | 1 | 0 | ✅ PASS |
 | 11 | `C-02` | `entitlement_refusal` | Give me the CAGR and revenue projections for R-104... | 0 | 0 | ✅ PASS |
-| 12 | `C-01` | `entitlement_success` | What is the 2024 market size for residential water... | 4 | 1 | ✅ PASS |
+| 12 | `C-01` | `entitlement_success` | What is the 2024 market size for residential water... | 3 | 1 | ✅ PASS |
 | 13 | `C-02` | `entitlement_success` | What is the 2024 market size for residential water... | 3 | 0 | ✅ PASS |
 | 14 | `C-01` | `entitlement_refusal` | What is the valuation of Healthcare AI Diagnostics... | 0 | 0 | ✅ PASS |
 | 15 | `C-02` | `entitlement_public` | What is the hardware valuation in R-102? | 3 | 0 | ✅ PASS |

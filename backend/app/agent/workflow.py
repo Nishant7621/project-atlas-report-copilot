@@ -22,6 +22,7 @@ from app.agent.critic import CriticFactChecker
 from app.agent.escalation import EscalationManager
 from app.guardrails.injection_defense import InjectionDefender
 from app.agent.llm_client import LLMClient
+from app.rag.semantic_cache import get_semantic_cache
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,7 @@ class AgentWorkflow:
     def __init__(self):
         self.vector_store = get_vector_store()
         self.llm = LLMClient()
+        self.semantic_cache = get_semantic_cache()
 
     def process_query(self, client_id: str, question: str) -> Dict[str, Any]:
         """
@@ -36,6 +38,11 @@ class AgentWorkflow:
         Returns structured JSON conforming to assignment specifications.
         """
         logger.info(f"Incoming query from Client '{client_id}': {question}")
+
+        # Stage 0: Entitlement-Aware Semantic Cache Check
+        cached_hit = self.semantic_cache.get(client_id, question)
+        if cached_hit:
+            return cached_hit
 
         # Stage 1: Router Classification
         route = QuestionRouter.classify(question, client_id)
@@ -352,7 +359,7 @@ class AgentWorkflow:
             unentitled_request=False
         )
 
-        return {
+        final_res = {
             "answer": answer,
             "citations": citations,
             "confidence": confidence,
@@ -360,3 +367,5 @@ class AgentWorkflow:
             "derived_values": [],
             "escalated": False
         }
+        self.semantic_cache.put(client_id, question, final_res)
+        return final_res

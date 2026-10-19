@@ -148,9 +148,17 @@ class EntitlementAwareVectorStore:
                 result_chunk["score"] = round(score, 4)
                 scored_results.append(result_chunk)
 
-        # Sort descending by score
+        # Sort descending by candidate score
         scored_results.sort(key=lambda x: x["score"], reverse=True)
-        return scored_results[:top_k]
+        candidates = scored_results[:15]  # Stage 1: Candidate Generation (top 15)
+
+        # Stage 2: Cross-Encoder Re-Ranking
+        try:
+            from app.rag.reranker import get_reranker
+            reranker = get_reranker()
+            return reranker.rerank(query, candidates, top_k=top_k)
+        except Exception:
+            return candidates[:top_k]
 
 # Global singleton
 _vector_store = None
