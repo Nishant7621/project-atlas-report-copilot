@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 
 from app.config import settings
 from app.database.connection import init_db, SessionLocal
+from app.database.seed import seed_database
 from app.database.models import Escalation, ChatFeedback
 from app.rag.chunker import ReportChunker
 from app.rag.vector_store import get_vector_store
@@ -43,6 +44,8 @@ app.add_middleware(
 @app.on_event("startup")
 def startup_event():
     init_db()
+    # Seed required database tables (clients, entitlements, reports) if empty
+    seed_database()
     # Preload vector store
     get_vector_store()
     logger.info("Project Atlas FastAPI Service started successfully.")
